@@ -121,4 +121,4 @@ var exports = {
 
 Object.assign(ENV, exports);
 
-}(module ? module.exports : window));
+}(typeof module !== "undefined" ? module.exports : window.s3 = Object.create(null)));
