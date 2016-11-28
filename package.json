@@ -1,0 +1,24 @@
+{
+  "name": "s3.js",
+  "version": "0.0.1",
+  "description": "S3 style classes for JavaScript",
+  "main": "s3.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drewsynan/s3.js.git"
+  },
+  "keywords": [
+    "generic-function",
+    "oo",
+    "s3"
+  ],
+  "author": "Drew Synan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/drewsynan/s3.js/issues"
+  },
+  "homepage": "https://github.com/drewsynan/s3.js#readme"
+}
