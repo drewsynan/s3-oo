@@ -1,51 +1,96 @@
-;(function(ENV){
-var CLASS_PROP = "__class__";
-var TRACKER_CLASS = "__classTracker__";
+;(function(definition){
+	if(typeof global === "object" && typeof module === "object") { // NodeJS
+		definition(module.exports);
+	} else if(typeof window === "object") { // Browser
+		definition(window.s3 = Object.create(null));
+	} else {
+		throw new Error("Unsupported environment. Could not load s3-oo");
+	}
+}(function(ENV){
+var CLASS_ATTR 		= "__s3class__";
+var TRACKER_CLASS 	= "__s3classtracker__";
+
+function bless(x) {
+	x.useMethod 	= useMethod;
+	x.nextMethod 	= nextMethod;
+	return x;
+}
+
+function classOf(x, setter) {
+	function coerce(primitive) {
+		var obj = Object.valueOf.call(primitive);
+		obj[CLASS_ATTR] = typeof primitive;
+		return obj;
+	}
+
+	function getClass(obj) {
+		if (typeof obj === "undefined" || obj === null) { // undefined and null have no class
+			return undefined;
+		} else if (obj[CLASS_ATTR]) { 
+			return obj[CLASS_ATTR]; 
+		} else if (Array.isArray(obj)) { 
+			return ["array"]; 
+		} else if (typeof obj === "object") { 
+			return ["object"]; 
+		} else {
+			return [typeof obj];
+		}		
+	}
+
+	function setClass(obj, classes) {
+		// modifies in place, returns object copies
+		// of immutable values
+
+		if(!getClass(obj)) {
+			console.warn('Cannot set class of null or undefined');
+			return obj;
+		}
+		if(typeof obj !== "function" || typeof obj !== "object") {
+			obj = coerce(obj);
+		}
+
+		obj[CLASS_ATTR] = [].concat(classes);
+		return obj;
+	}
+
+	return (setter === undefined ? getClass(x) : setClass(x, setter));
+}
 
 function environment() { return ENV; }
 
+function failure(fail) { throw new Error("fail"); }
+
+function generic(f) {
+	if( !f.name ) return failure("Name of function for generic method not given: s3.generic needs to be used with named functions.");
+	var g = bless(f).bind(bless({}));
+	ENV[f.name] = g;
+
+	return g;
+}
+
+function hasClass(x, c) { return classOf(x).indexOf(c) >= 0; }
+
 function method(methodName, obj/*, args, ...*/) {
-
-	if(!hasClass(this, TRACKER_CLASS)) {
-		throw new Error("className in classTracker not set !");
-	}
-
+	if(!hasClass(this, TRACKER_CLASS)) { return failure("className in classTracker not set !"); }
+	
 	var className = this.class;
-
 	var env = environment();
 	var objectClassList = classOf(obj);
 	var methodArgs = Array.prototype.slice.call(arguments).slice(1);
 
 	var method = env[methodName];
-	if(method === undefined) {
-		throw new Error("Method " + methodName + " is not defined.");
-	}
+	if(!method) { return failure("Method " + methodName + " is not defined."); }
 
-	var definedMethods = new Set(Object.keys(method));
-	var dispatched = definedMethods.has(className)? method[className] : method.default;
-	var conflictingDefs = Object.keys(method).filter(function(key){ return key === className; }).length > 1;
+	var reifiedMethods = new Set(Object.keys(method));
+	var dispatched = reifiedMethods.has(className)? method[className] : method.default;
 
-	if(dispatched === undefined) {
-		throw new Error ("Could not find " + methodName + " method for " + className);
-	} else if (conflictingDefs) {
-		throw new Error("Multiple " + methodName + " method definitions found for " + className);
-	}
+	if(!dispatched) { return failure("Could not find " + methodName + " method for " + className); } 
 
 	var classTracker = bless({class: className});
 	classOf(classTracker, TRACKER_CLASS);
 
 	return dispatched.apply(classTracker, methodArgs);
 } 
-
-function useMethod(methodName, obj/*, args... */) {
-	var methodArgs = Array.prototype.slice.call(arguments).slice(2);
-	var className = classOf(obj).slice(-1)[0]; // last class, no ancestors
-
-	var classTracker = bless({class: className});
-	classOf(classTracker, TRACKER_CLASS);
-
-	return method.apply(classTracker, [methodName, obj].concat(methodArgs));
-}
 
 function nextMethod(methodName, obj/*, args ... */) {
 	var methodArgs = Array.prototype.slice.call(arguments).slice(2);
@@ -59,7 +104,7 @@ function nextMethod(methodName, obj/*, args ... */) {
 	}
 
 	var nextClassName = classList[classList.indexOf(baseClassName) - 1];
-	if(nextClassName === undefined) { throw new Error("No next class for " + baseClassName)}
+	if(!nextClassName) { return failure("No next class for " + baseClassName)}
 
 	var classTracker = bless({class: nextClassName});
 	classOf(classTracker, TRACKER_CLASS);
@@ -67,50 +112,14 @@ function nextMethod(methodName, obj/*, args ... */) {
 	return method.apply(classTracker, [methodName, obj].concat(methodArgs));
 }
 
-function classOf(x, setter) {
-	function getClass(obj) {
-		if (obj[CLASS_PROP]) return obj[CLASS_PROP];
-		if(typeof obj === "object") {
-			if(Array.isArray(obj)) {
-				return ["array"];
-			} else {
-				return ["object"];
-			}
-		} else if (typeof obj !== undefined) {
-			return [typeof obj];
-		} else {
-			return undefined;
-		}		
-	}
+function useMethod(methodName, obj/*, args... */) {
+	var methodArgs = Array.prototype.slice.call(arguments).slice(2);
+	var className = classOf(obj).slice(-1)[0]; // last class, no ancestors
 
-	function setClass(obj, classes) {
-		obj[CLASS_PROP] = [].concat(classes);
-		return obj[CLASS_PROP];
-	}
+	var classTracker = bless({class: className});
+	classOf(classTracker, TRACKER_CLASS);
 
-	if(setter === undefined) {
-		return getClass(x);
-	} else {
-		return setClass(x, setter);
-	}
-}
-
-function hasClass(x, c) {
-	return classOf(x).indexOf(c) >= 0;
-}
-
-function bless(o) {
-	o.useMethod = useMethod;
-	o.nextMethod = nextMethod;
-	return o;
-}
-
-function generic(f) {
-	if(! f.name ) throw new Error("Name of function for generic method not given: s3.generic needs to be used with named functions.");
-	var g = bless(f).bind(bless({}));
-	ENV[f.name] = g;
-
-	return g;
+	return method.apply(classTracker, [methodName, obj].concat(methodArgs));
 }
 
 var exports = {
@@ -121,4 +130,4 @@ var exports = {
 
 Object.assign(ENV, exports);
 
-}(typeof module !== "undefined" ? module.exports : window.s3 = Object.create(null)));
+}));
