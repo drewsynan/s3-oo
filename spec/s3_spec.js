@@ -1,5 +1,5 @@
 describe("s3 main object", function(){
-	var s3 = require('../s3-redo.js');
+	var s3 = require('../s3.js');
 	if("should be an object", function(){
 		expect(typeof s3).toEqual("object");
 	});
@@ -20,7 +20,7 @@ describe("s3 main object", function(){
 });
 
 describe("classes of builtins and objects", function(){
-	var s3 = require('../s3-redo');
+	var s3 = require('../s3.js');
 
 	it("should class builtins (except for special cases of object) the same as using typeof", function(){
 		expect(s3.classOf('string')).toEqual(['string']);
@@ -60,7 +60,7 @@ describe("classes of builtins and objects", function(){
 });
 
 describe("setting and modifying classes", function(){
-	var s3 = require('../s3-redo.js');
+	var s3 = require('../s3.js');
 	it("should be able set a class", function(){
 		var x = s3.classOf({}, "myClass");
 		expect(s3.classOf(x)).toEqual(["myClass"]);
@@ -105,7 +105,7 @@ describe("setting and modifying classes", function(){
 });
 
 describe("creating generic functions", function(){
-	var s3 = require('../s3-redo.js');
+	var s3 = require('../s3.js');
 
 	it("should be able to create a generic function", function(){
 		var info = s3.generic(function info(x){
@@ -141,7 +141,7 @@ describe("creating generic functions", function(){
 });
 
 describe("dispatching generic functions", function(){
-	var s3 = require('../s3-redo.js');
+	var s3 = require('../s3.js');
 
 	it("should be able to register class methods", function(){
 		var info = s3.generic(function info(x){
@@ -230,7 +230,7 @@ describe("dispatching generic functions", function(){
 });
 
 describe("dispatching down the class chain", function(){
-	var s3 = require('../s3-redo.js');
+	var s3 = require('../s3.js');
 
 	it("should be able to dispatch on the next method in the prototype chain", function(){
 		var info = s3.generic(function info(x){

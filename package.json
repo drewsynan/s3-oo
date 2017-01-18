@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/drewsynan/s3-oo#readme",
   "devDependencies": {
-    "jasmine": "^2.5.3"
+    "jasmine": "^2.5.3",
+    "jshint": "^2.9.4"
   }
 }

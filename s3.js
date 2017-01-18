@@ -1,4 +1,3 @@
-
 ;(function(definition){
 	if(typeof global === "object" && typeof module === "object") { // NodeJS
 		definition(module.exports);
@@ -99,10 +98,10 @@ function classOf(x, setter) {
 	}
 
 	function getConstructor(obj) {
-		// could make this recurse up the __proto__ chain, but idk how useful that would actually be
+		// could make this recurse up the prototype chain, but idk how useful that would actually be
 
-		if(obj.__proto__ && obj.__proto__.constructor && obj.__proto__.constructor.name) {
-			var constructorName = obj.__proto__.constructor.name;
+		if(Object.getPrototypeOf(obj) && Object.getPrototypeOf(obj).constructor && Object.getPrototypeOf(obj).constructor.name) {
+			var constructorName = Object.getPrototypeOf(obj).constructor.name;
 			var className = constructorName[0].toLowerCase() + constructorName.slice(1);
 			return className;
 		} else {
@@ -187,7 +186,7 @@ function generic(f, name, env) {
 	if(!f.name && !name) {
 		throw new Error("Named function or name parameter not given. Call again with a named function, or pass a method name as the second argument");
 	}
-	var env = environment();
+	env = env || environment();
 	var methodName = name || f.name; // use overriding name before function name
 	var proto = Object.create(null);
 
@@ -196,8 +195,8 @@ function generic(f, name, env) {
 	proto.methodName = methodName;
 	proto.dbgFn = dbgFn;
 
-	var expandedProto = Object.assign(f.__proto__, proto);
-	f.__proto__ = expandedProto;
+	var expandedProto = Object.assign(Object.getPrototypeOf(f), proto);
+	Object.setPrototypeOf(f, expandedProto);
 	var g = f.bind(proto);
 	appendClass(g, "genericFn");
 	env[methodName] = g;
@@ -276,7 +275,6 @@ function useMethod(maybeName, maybeObj/*, methodArgs... */) {
 		throw new Error("useMethod: object not given for method use. Got " + obj);
 	}
 
-	var methodArgs = Array.prototype.slice.call(arguments).slice(2);
 	var className = lastClass(obj); // last class name in the class chain (i.e. most recent class added)
 
 	return method.apply(this, [methodName, className, obj].concat(methodArgs));
@@ -297,7 +295,6 @@ function nextMethod(maybeName, maybeObj/*, methodArgs... */) {
 		throw new Error("nextMethod: object not given for method use. Got '" + obj + "'");
 	}
 
-	var methodArgs = Array.prototype.slice.call(arguments).slice(2);
 	var methodContext = Object.assign(Object.create(null), this);
 
 	if(!this.nextClass) {
