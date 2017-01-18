@@ -9,8 +9,6 @@ describe("s3 main object", function(){
 			"__env__", 
 			"appendClass", 
 			"classOf", 
-			"dbg", 
-			"dbgFn", 
 			"generic", 
 			"hasClass",
 			"lastClass", 
